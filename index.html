@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>跨境电商双模计算器（修正版）</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --background: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+            color: var(--primary);
+            background: var(--background);
+        }
+        .mode-switcher {
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .mode-btn {
+            padding: 0.8rem 2rem;
+            margin: 0 0.5rem;
+            border: 2px solid var(--secondary);
+            background: white;
+            color: var(--secondary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mode-btn.active {
+            background: var(--secondary);
+            color: white;
+        }
+        .calculator-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .calculator {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .input-group {
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        button.calculate-btn {
+            grid-column: span 2;
+            padding: 0.8rem;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 0.5rem;
+        }
+        .results {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            height: fit-content;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.6rem 0;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.95rem;
+        }
+        .result-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .negative {
+            color: #dc3545;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .calculator {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mode-switcher">
+        <button class="mode-btn active" onclick="switchMode('profit')">利润计算模式</button>
+        <button class="mode-btn" onclick="switchMode('price')">售价计算模式</button>
+    </div>
+
+    <div class="calculator-container">
+        <!-- 利润计算器 -->
+        <div id="profit-calculator" class="calculator">
+            <div>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>拿货价（CNY）</label>
+                        <input type="number" id="costPrice" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>售价（TWD）</label>
+                        <input type="number" id="salePrice" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label>汇率（TWD/CNY）</label>
+                        <input type="number" id="exchangeRate" step="0.01" value="4.62">
+                    </div>
+                    <div class="input-group">
+                        <label>重量（kg）</label>
+                        <input type="number" id="weight" step="0.1" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>头程运费（CNY/kg）</label>
+                        <input type="number" id="headFreight" step="0.1" value="7">
+                    </div>
+                    <div class="input-group">
+                        <label>尾程运费（TWD）</label>
+                        <input type="number" id="tailFreight" step="1" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>打包费（CNY）</label>
+                        <input type="number" id="packingFee" step="0.1" value="5">
+                    </div>
+                    <div class="input-group">
+                        <label>平台佣金（%）</label>
+                        <input type="number" id="platformFeeRate" step="0.1" value="7.5">
+                    </div>
+                    <div class="input-group">
+                        <label>活动手续费（%）</label>
+                        <input type="number" id="activityFeeRate" step="0.1" value="7">
+                    </div>
+                    <div class="input-group">
+                        <label>提现手续费（%）</label>
+                        <input type="number" id="withdrawFeeRate" step="0.1" value="4">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculateProfit()">计算利润</button>
+            </div>
+
+            <div class="results">
+                <div class="result-item">
+                    <span>平台佣金：</span>
+                    <span class="result-value"><span id="platformFee">0.00</span> TWD</span>
+                </div>
+                <div class="result-item">
+                    <span>活动手续费：</span>
+                    <span class="result-value"><span id="activityFee">0.00</span> TWD</span>
+                </div>
+                <div class="result-item">
+                    <span>运输成本：</span>
+                    <span class="result-value"><span id="shippingCost">0.00</span> CNY</span>
+                </div>
+                <div class="result-item">
+                    <span>总成本：</span>
+                    <span class="result-value"><span id="totalCost">0.00</span> CNY</span>
+                </div>
+                <div class="result-item">
+                    <span>净利润：</span>
+                    <span class="result-value"><span id="netProfit">0.00</span> CNY</span>
+                </div>
+                <div class="result-item">
+                    <span>利润率（基于售价）：</span>
+                    <span class="result-value"><span id="profitRate">0.00</span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 售价计算器 -->
+        <div id="price-calculator" class="calculator hidden">
+            <div>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>拿货价（CNY）</label>
+                        <input type="number" id="costPrice2" step="0.01" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label>目标利润率（%）</label>
+                        <input type="number" id="profitMargin" step="0.1" value="20">
+                    </div>
+                    <div class="input-group">
+                        <label>汇率（TWD/CNY）</label>
+                        <input type="number" id="exchangeRate2" step="0.01" value="4.62">
+                    </div>
+                    <div class="input-group">
+                        <label>重量（kg）</label>
+                        <input type="number" id="weight2" step="0.1" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>头程运费（CNY/kg）</label>
+                        <input type="number" id="headFreight2" step="0.1" value="7">
+                    </div>
+                    <div class="input-group">
+                        <label>优惠折扣（%）</label>
+                        <input type="number" id="discount" step="0.1" value="30">
+                    </div>
+                    <div class="input-group">
+                        <label>平台佣金（%）</label>
+                        <input type="number" id="platformFee2" step="0.1" value="7.5">
+                    </div>
+                    <div class="input-group">
+                        <label>活动手续费（%）</label>
+                        <input type="number" id="activityFee2" step="0.1" value="5">
+                    </div>
+                    <div class="input-group">
+                        <label>提现手续费（%）</label>
+                        <input type="number" id="withdrawFee2" step="0.1" value="4">
+                    </div>
+                    <div class="input-group">
+                        <label>打包费用（CNY）</label>
+                        <input type="number" id="packingFee2" step="0.1" value="5">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculatePrice()">计算售价</button>
+            </div>
+
+            <div class="results">
+                <div class="result-item">
+                    <span>建议原价：</span>
+                    <span class="result-value"><span id="originalPrice">0</span> TWD</span>
+                </div>
+                <div class="result-item">
+                    <span>实际售价：</span>
+                    <span class="result-value"><span id="finalPrice">0</span> TWD</span>
+                </div>
+                <div class="result-item">
+                    <span>预估利润：</span>
+                    <span class="result-value"><span id="expectedProfit">0</span> CNY</span>
+                </div>
+                <div class="result-item">
+                    <span>总成本：</span>
+                    <span class="result-value"><span id="totalCost2">0</span> CNY</span>
+                </div>
+                <div class="result-item">
+                    <span>平台费用：</span>
+                    <span class="result-value"><span id="platformCost">0</span> TWD</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模式切换
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.calculator').forEach(calc => calc.classList.add('hidden'));
+            if(mode === 'profit') {
+                document.querySelector('[onclick="switchMode(\'profit\')"]').classList.add('active');
+                document.getElementById('profit-calculator').classList.remove('hidden');
+            } else {
+                document.querySelector('[onclick="switchMode(\'price\')"]').classList.add('active');
+                document.getElementById('price-calculator').classList.remove('hidden');
+            }
+        }
+
+        // 利润计算逻辑（保持不变）
+        function calculateProfit() {
+            const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
+            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+            const headFreight = parseFloat(document.getElementById('headFreight').value) || 0;
+            const tailFreight = parseFloat(document.getElementById('tailFreight').value) || 0;
+            const packingFee = parseFloat(document.getElementById('packingFee').value) || 0;
+            const platformFeeRate = (parseFloat(document.getElementById('platformFeeRate').value) || 0) / 100;
+            const activityFeeRate = (parseFloat(document.getElementById('activityFeeRate').value) || 0) / 100;
+            const withdrawFeeRate = (parseFloat(document.getElementById('withdrawFeeRate').value) || 0) / 100;
+
+            const platformFee = salePrice * platformFeeRate;
+            const activityFee = salePrice * activityFeeRate;
+            const receivedBeforeWithdraw = salePrice - platformFee - activityFee - tailFreight;
+            const withdrawFee = receivedBeforeWithdraw * withdrawFeeRate;
+            
+            const headFreightCNY = headFreight * weight;
+            const totalCost = costPrice + headFreightCNY + packingFee 
+                + (tailFreight / exchangeRate) 
+                + (platformFee + activityFee + withdrawFee) / exchangeRate;
+
+            const revenueCNY = salePrice / exchangeRate;
+            const profit = revenueCNY - totalCost;
+            const profitRate = ((profit / revenueCNY) * 100).toFixed(2);
+
+            document.getElementById('platformFee').textContent = platformFee.toFixed(2);
+            document.getElementById('activityFee').textContent = activityFee.toFixed(2);
+            document.getElementById('shippingCost').textContent = (headFreightCNY + (tailFreight / exchangeRate)).toFixed(2);
+            document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+            
+            const profitElement = document.getElementById('netProfit');
+            profitElement.textContent = profit.toFixed(2);
+            profitElement.className = profit >= 0 ? 'result-value' : 'result-value negative';
+            
+            const rateElement = document.getElementById('profitRate');
+            rateElement.textContent = profitRate;
+            rateElement.className = profit >= 0 ? 'result-value' : 'result-value negative';
+        }
+
+        // 售价计算逻辑（已按新算法重写）
+        function calculatePrice() {
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate2').value) || 4.62;
+            const costPriceCNY = parseFloat(document.getElementById('costPrice2').value) || 0;
+            const profitMargin = (parseFloat(document.getElementById('profitMargin').value) || 20) / 100;
+            const weight = parseFloat(document.getElementById('weight2').value) || 0;
+            const headFreightCNY = parseFloat(document.getElementById('headFreight2').value) || 7;
+            const discount = (parseFloat(document.getElementById('discount').value) || 30) / 100;
+            const platformFeeRate = (parseFloat(document.getElementById('platformFee2').value) || 7.5) / 100;
+            const activityFeeRate = (parseFloat(document.getElementById('activityFee2').value) || 5) / 100;
+            const withdrawFeeRate = (parseFloat(document.getElementById('withdrawFee2').value) || 4) / 100;
+            const packingFeeCNY = parseFloat(document.getElementById('packingFee2').value) || 5;
+
+            // 核心计算公式（同步新算法）
+            const shippingCostTWD = (headFreightCNY * weight) * exchangeRate;
+            const productCostTWD = costPriceCNY * exchangeRate;
+            const packingCostTWD = packingFeeCNY * exchangeRate;
+
+            const denominator = (
+                (1 - platformFeeRate) * (1 - withdrawFeeRate) -
+                profitMargin -
+                activityFeeRate
+            );
+
+            const finalPriceTWD = (productCostTWD + shippingCostTWD + packingCostTWD) / denominator;
+            const originalPriceTWD = finalPriceTWD / (1 - discount);
+
+            // 验证计算
+            const platformFeeTWD = finalPriceTWD * platformFeeRate;
+            const activityFeeTWD = finalPriceTWD * activityFeeRate;
+            const netAmountTWD = finalPriceTWD - platformFeeTWD;
+            const withdrawFeeTWD = netAmountTWD * withdrawFeeRate;
+            
+            const totalCostCNY = costPriceCNY + (headFreightCNY * weight) + packingFeeCNY;
+            const expectedProfitCNY = (finalPriceTWD - platformFeeTWD - activityFeeTWD - withdrawFeeTWD) / exchangeRate - totalCostCNY;
+
+            // 更新显示
+            document.getElementById('originalPrice').textContent = Math.round(originalPriceTWD);
+            document.getElementById('finalPrice').textContent = Math.round(finalPriceTWD);
+            document.getElementById('expectedProfit').textContent = expectedProfitCNY.toFixed(2);
+            document.getElementById('totalCost2').textContent = totalCostCNY.toFixed(2);
+            document.getElementById('platformCost').textContent = Math.round(platformFeeTWD + activityFeeTWD);
+        }
+    </script>
+</body>
+</html>
