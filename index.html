@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>跨境电商双模计算器（修正版）</title>
+    <title>跨境电商双模计算器（完整版）</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -224,6 +224,10 @@
                         <input type="number" id="headFreight2" step="0.1" value="7">
                     </div>
                     <div class="input-group">
+                        <label>尾程运费（TWD）</label>
+                        <input type="number" id="tailFreight2" step="1" value="0">
+                    </div>
+                    <div class="input-group">
                         <label>优惠折扣（%）</label>
                         <input type="number" id="discount" step="0.1" value="30">
                     </div>
@@ -286,7 +290,7 @@
             }
         }
 
-        // 利润计算逻辑（保持不变）
+        // 利润计算逻辑
         function calculateProfit() {
             const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
             const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
@@ -327,20 +331,20 @@
             rateElement.className = profit >= 0 ? 'result-value' : 'result-value negative';
         }
 
-        // 售价计算逻辑（已按新算法重写）
+        // 售价计算逻辑
         function calculatePrice() {
             const exchangeRate = parseFloat(document.getElementById('exchangeRate2').value) || 4.62;
             const costPriceCNY = parseFloat(document.getElementById('costPrice2').value) || 0;
             const profitMargin = (parseFloat(document.getElementById('profitMargin').value) || 20) / 100;
             const weight = parseFloat(document.getElementById('weight2').value) || 0;
             const headFreightCNY = parseFloat(document.getElementById('headFreight2').value) || 7;
+            const tailFreightTWD = parseFloat(document.getElementById('tailFreight2').value) || 0;
             const discount = (parseFloat(document.getElementById('discount').value) || 30) / 100;
             const platformFeeRate = (parseFloat(document.getElementById('platformFee2').value) || 7.5) / 100;
             const activityFeeRate = (parseFloat(document.getElementById('activityFee2').value) || 5) / 100;
             const withdrawFeeRate = (parseFloat(document.getElementById('withdrawFee2').value) || 4) / 100;
             const packingFeeCNY = parseFloat(document.getElementById('packingFee2').value) || 5;
 
-            // 核心计算公式（同步新算法）
             const shippingCostTWD = (headFreightCNY * weight) * exchangeRate;
             const productCostTWD = costPriceCNY * exchangeRate;
             const packingCostTWD = packingFeeCNY * exchangeRate;
@@ -351,19 +355,17 @@
                 activityFeeRate
             );
 
-            const finalPriceTWD = (productCostTWD + shippingCostTWD + packingCostTWD) / denominator;
+            const finalPriceTWD = (productCostTWD + shippingCostTWD + packingCostTWD + tailFreightTWD) / denominator;
             const originalPriceTWD = finalPriceTWD / (1 - discount);
 
-            // 验证计算
             const platformFeeTWD = finalPriceTWD * platformFeeRate;
             const activityFeeTWD = finalPriceTWD * activityFeeRate;
             const netAmountTWD = finalPriceTWD - platformFeeTWD;
             const withdrawFeeTWD = netAmountTWD * withdrawFeeRate;
             
-            const totalCostCNY = costPriceCNY + (headFreightCNY * weight) + packingFeeCNY;
-            const expectedProfitCNY = (finalPriceTWD - platformFeeTWD - activityFeeTWD - withdrawFeeTWD) / exchangeRate - totalCostCNY;
+            const totalCostCNY = costPriceCNY + (headFreightCNY * weight) + packingFeeCNY + (tailFreightTWD / exchangeRate);
+            const expectedProfitCNY = (finalPriceTWD - platformFeeTWD - activityFeeTWD - withdrawFeeTWD - tailFreightTWD) / exchangeRate - totalCostCNY;
 
-            // 更新显示
             document.getElementById('originalPrice').textContent = Math.round(originalPriceTWD);
             document.getElementById('finalPrice').textContent = Math.round(finalPriceTWD);
             document.getElementById('expectedProfit').textContent = expectedProfitCNY.toFixed(2);
